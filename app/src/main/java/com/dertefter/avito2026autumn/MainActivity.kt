@@ -2,46 +2,61 @@ package com.dertefter.avito2026autumn
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.dertefter.design.theme.Avito2026autumnTheme
+import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Color
+import com.dertefter.avito2026autumn.presentation.MainScreen
+import com.dertefter.avito2026autumn.presentation.MainViewModel
+import com.dertefter.data.settings.dto.theme.DarkThemeStatus
+import com.dertefter.design.theme.TheTheme
+import com.dertefter.navigation.Navigator
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var navigator: Navigator
+
+    private val viewModel: MainViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
+        enableEdgeToEdge(
+            navigationBarStyle = SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT
+            )
+        )
+
         setContent {
-            Avito2026autumnTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+            val uiState by viewModel.themeState.collectAsState()
+
+            val darkTheme = when (uiState.darkThemeStatus) {
+                DarkThemeStatus.DAY -> false
+                DarkThemeStatus.NIGHT -> true
+                DarkThemeStatus.AUTO -> isSystemInDarkTheme()
+            }
+
+            val seedColor = Color(uiState.seedColor.hex)
+
+            TheTheme(
+                darkTheme = darkTheme,
+                seedColor = seedColor
+            ) {
+                MainScreen(navigator)
             }
         }
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    Avito2026autumnTheme {
-        Greeting("Android")
-    }
-}
+
+

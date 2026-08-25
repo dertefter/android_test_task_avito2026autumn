@@ -11,7 +11,18 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/core" />
+            <option value="$PROJECT_DIR$/core/data" />
+            <option value="$PROJECT_DIR$/core/data/ai" />
+            <option value="$PROJECT_DIR$/core/data/notes" />
+            <option value="$PROJECT_DIR$/core/data/settings" />
+            <option value="$PROJECT_DIR$/core/data/tasks" />
             <option value="$PROJECT_DIR$/core/design" />
+            <option value="$PROJECT_DIR$/core/navigation" />
+            <option value="$PROJECT_DIR$/feat" />
+            <option value="$PROJECT_DIR$/feat/note_editor" />
+            <option value="$PROJECT_DIR$/feat/notes" />
+            <option value="$PROJECT_DIR$/feat/settings" />
+            <option value="$PROJECT_DIR$/feat/tasks" />
           </set>
         </option>
       </GradleProjectSettings>

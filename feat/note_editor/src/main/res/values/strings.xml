@@ -1,0 +1,14 @@
+<resources>
+    <string name="note_editor_error_blank_title">Пустой заголовок</string>
+    <string name="note_editor_error_unknown">Неизвестная ошибка</string>
+    <string name="note_editor_title_new">Новая заметка</string>
+    <string name="note_editor_title_edit">Редактировать</string>
+    <string name="note_editor_back_button_description">Назад</string>
+    <string name="note_editor_save_button_description">Сохранить</string>
+    <string name="note_editor_delete_image_description">Удалить изображение</string>
+    <string name="note_editor_image_missing">Изображение отсутствует</string>
+    <string name="note_editor_add_from_gallery">Добавить из галереи</string>
+    <string name="note_editor_take_photo">Сделать фото</string>
+    <string name="note_editor_title_label">Заголовок</string>
+    <string name="note_editor_text_label">Текст заметки</string>
+</resources>
