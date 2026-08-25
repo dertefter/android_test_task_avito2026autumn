@@ -24,4 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "avito2026autumn"
 include(":app")
- 
+include(":core:design")
