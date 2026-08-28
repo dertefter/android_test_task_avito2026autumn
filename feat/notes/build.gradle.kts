@@ -32,12 +32,10 @@ dependencies {
     implementation(project(":core:data:notes"))
 
     implementation(libs.androidx.lifecycle.runtime.ktx)
-
     implementation(libs.hilt.lifecycle.viewmodel.compose)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.coil.compose)
-
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

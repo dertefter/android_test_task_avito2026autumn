@@ -9,5 +9,6 @@ data class UiState(
     val isSearchVisible: Boolean = false,
     val sortOrder: SortOrder = SortOrder.NEWEST_FIRST,
     val isCreatingTask: Boolean = false,
-    val newTaskTitle: String = ""
+    val newTaskTitle: String = "",
+    val generationStatus: GenerationStatus? = null
 )

@@ -8,4 +8,7 @@ interface AiRepository {
 
     suspend fun updateBalance(): Result<Int>
 
+    suspend fun generateTask(input: String): Result<String>
+
+
 }

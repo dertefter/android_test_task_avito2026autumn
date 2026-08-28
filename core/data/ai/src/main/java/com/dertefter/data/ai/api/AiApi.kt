@@ -1,7 +1,10 @@
 package com.dertefter.data.ai.api
 
 import com.dertefter.data.ai.dto.BalanceResponse
+import com.dertefter.data.ai.dto.ChatRequest
+import com.dertefter.data.ai.dto.ChatResponse
 import com.dertefter.data.ai.dto.TokenResponse
+import retrofit2.http.Body
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
@@ -23,4 +26,10 @@ interface AiApi {
     suspend fun getBalance(
         @Header("Authorization") bearerToken: String
     ): BalanceResponse
+
+    @POST("v1/chat/completions")
+    suspend fun chatCompletions(
+        @Header("Authorization") bearerToken: String,
+        @Body request: ChatRequest
+    ): ChatResponse
 }

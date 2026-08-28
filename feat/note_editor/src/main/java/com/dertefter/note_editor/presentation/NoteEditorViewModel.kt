@@ -78,7 +78,7 @@ class NoteEditorViewModel @Inject constructor(
     }
 
     fun onEvent(event: Event) {
-        when (event) {
+         when (event) {
             Event.OnBack -> {
                 navigator.navigateUp()
             }
@@ -112,6 +112,19 @@ class NoteEditorViewModel @Inject constructor(
 
             Event.OnDismissError -> {
                 _uiState.update { it.copy(error = null) }
+            }
+
+            is Event.OnSpeechRecognized -> {
+                if (event.target == RecordTarget.TITLE) {
+                    _uiState.update { it.copy(title = (it.title + " " + event.text).trim()) }
+                } else {
+                    _uiState.update { it.copy(text = (it.text + " " + event.text).trim()) }
+                }
+                updateSaveEnabled()
+            }
+
+            is Event.OnSpeechRecognitionError -> {
+                _uiState.update { it.copy(error = Exception(event.message)) }
             }
         }
     }

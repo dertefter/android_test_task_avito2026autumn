@@ -1,5 +1,10 @@
 package com.dertefter.tasks.presentation
 
+import android.app.Activity
+import android.content.Intent
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
@@ -41,6 +46,7 @@ import com.dertefter.design.icons.Icons
 import com.dertefter.design.theme.TheTheme
 import com.dertefter.tasks.dto.SortOrder
 import com.dertefter.tasks.dto.TaskDto
+import com.dertefter.tasks.presentation.component.TaskGenerationStatusCard
 import com.dertefter.tasks.presentation.component.TaskInputItem
 import com.dertefter.tasks.presentation.component.TaskItem
 import java.time.LocalDateTime
@@ -53,6 +59,32 @@ fun TasksScreen(
 ) {
 
     var showSortMenu by remember { mutableStateOf(false) }
+    var isFabExpanded by remember { mutableStateOf(false) }
+
+    val speechRecognizerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult(),
+        onResult = { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val data = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+                val text = data?.get(0)
+                if (text != null) {
+                    onEvent(Event.StartAiGeneration(text))
+                }
+            }
+            isFabExpanded = false
+        }
+    )
+
+    fun startSpeechRecognition() {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak now...")
+        }
+        try {
+            speechRecognizerLauncher.launch(intent)
+        } catch (_: Exception) {
+        }
+    }
     val topBarState = rememberTopAppBarState()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(state = topBarState)
 
@@ -135,16 +167,56 @@ fun TasksScreen(
             AnimatedVisibility(
                 visible = !uiState.isCreatingTask
             ) {
-                FloatingActionButton(
-                    onClick = {
-                        onEvent(Event.CreateTask)
-                    }
+
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(
-                        Icons.Add,
-                        contentDescription = null
-                    )
+                    AnimatedVisibility(
+                        visible = isFabExpanded
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.End,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            FloatingActionButton(
+                                onClick = {
+                                    onEvent(Event.CreateTask)
+                                    isFabExpanded = false
+                                }
+                            ) {
+                                Icon(
+                                    Icons.TextFields,
+                                    contentDescription = null
+                                )
+                            }
+
+                            FloatingActionButton(
+                                onClick = {
+                                    startSpeechRecognition()
+                                }
+                            ) {
+                                Icon(
+                                    Icons.Mic,
+                                    contentDescription = null
+                                )
+                            }
+                        }
+                    }
+
+                    FloatingActionButton(
+                        onClick = {
+                            isFabExpanded = !isFabExpanded
+                        }
+                    ) {
+                        Icon(
+                            if (isFabExpanded) Icons.Close else Icons.Add,
+                            contentDescription = null
+                        )
+                    }
+
                 }
+
             }
         }
     ) { contentPadding ->
@@ -158,6 +230,21 @@ fun TasksScreen(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         ) {
+
+            item {
+                AnimatedVisibility(
+                    visible = uiState.generationStatus != null
+                ) {
+                    uiState.generationStatus?.let {
+                        TaskGenerationStatusCard(
+                            status = it,
+                            onRe = { onEvent(Event.RetryAiGeneration) },
+                            onCancel = { onEvent(Event.CancelAiGeneration) },
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                }
+            }
 
             items(
                 items = uiState.tasks,

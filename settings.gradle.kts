@@ -32,15 +32,14 @@ rootProject.name = "avito2026autumn"
 include(":app")
 
 include(":core:design")
+include(":core:navigation")
 include(":core:data:notes")
 include(":core:data:tasks")
 include(":core:data:settings")
 include(":core:data:ai")
-
 include(":feat:notes")
 include(":feat:tasks")
 include(":feat:note_editor")
 include(":feat:settings")
-include(":core:navigation")
 
 

@@ -11,4 +11,7 @@
     <string name="note_editor_take_photo">Сделать фото</string>
     <string name="note_editor_title_label">Заголовок</string>
     <string name="note_editor_text_label">Текст заметки</string>
+    <string name="note_editor_permission_rationale">Для этого нужно разрешение на доступ к микрофону</string>
+    <string name="note_editor_ok">Ок</string>
+    <string name="note_editor_cancel">Отмена</string>
 </resources>

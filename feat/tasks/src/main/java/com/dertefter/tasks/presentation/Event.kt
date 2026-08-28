@@ -13,4 +13,8 @@ sealed interface Event {
     data object ToggleSearch : Event
     data class ChangeSortOrder(val sortOrder: SortOrder) : Event
     data class ToggleTask(val taskId: Long) : Event
+
+    data class StartAiGeneration(val recognizedText: String) : Event
+    data object RetryAiGeneration : Event
+    data object CancelAiGeneration : Event
 }

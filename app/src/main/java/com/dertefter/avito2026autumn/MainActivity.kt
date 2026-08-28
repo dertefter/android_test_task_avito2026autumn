@@ -10,6 +10,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.dertefter.avito2026autumn.presentation.MainScreen
 import com.dertefter.avito2026autumn.presentation.MainViewModel
 import com.dertefter.data.settings.dto.theme.DarkThemeStatus
@@ -27,6 +28,12 @@ class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        val splashScreen = installSplashScreen()
+        splashScreen.setKeepOnScreenCondition {
+            viewModel.themeState.value == null
+        }
+
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge(
@@ -37,22 +44,26 @@ class MainActivity : ComponentActivity() {
         )
 
         setContent {
-            val uiState by viewModel.themeState.collectAsState()
+            val themeState by viewModel.themeState.collectAsState()
 
-            val darkTheme = when (uiState.darkThemeStatus) {
-                DarkThemeStatus.DAY -> false
-                DarkThemeStatus.NIGHT -> true
-                DarkThemeStatus.AUTO -> isSystemInDarkTheme()
+            themeState?.let { themeState ->
+                val darkTheme = when (themeState.darkThemeStatus) {
+                    DarkThemeStatus.DAY -> false
+                    DarkThemeStatus.NIGHT -> true
+                    DarkThemeStatus.AUTO -> isSystemInDarkTheme()
+                }
+
+                val seedColor = Color(themeState.seedColor.hex)
+
+                TheTheme(
+                    darkTheme = darkTheme,
+                    seedColor = seedColor
+                ) {
+                    MainScreen(navigator)
+                }
             }
 
-            val seedColor = Color(uiState.seedColor.hex)
 
-            TheTheme(
-                darkTheme = darkTheme,
-                seedColor = seedColor
-            ) {
-                MainScreen(navigator)
-            }
         }
     }
 }

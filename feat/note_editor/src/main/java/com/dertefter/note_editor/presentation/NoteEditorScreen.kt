@@ -1,7 +1,10 @@
 package com.dertefter.note_editor.presentation
 
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import android.speech.RecognizerIntent
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -66,14 +69,46 @@ fun NoteEditorScreen(
     var tempUri by remember { mutableStateOf<Uri?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
+    var currentSpeechTarget by remember { mutableStateOf<RecordTarget?>(null) }
+
+    val speechRecognizerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult(),
+        onResult = { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val data = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+                val text = data?.get(0)
+                if (text != null && currentSpeechTarget != null) {
+                    onEvent(Event.OnSpeechRecognized(text, currentSpeechTarget!!))
+                }
+            } else if (result.resultCode != Activity.RESULT_CANCELED) {
+                onEvent(Event.OnSpeechRecognitionError("Speech recognition failed"))
+            }
+            currentSpeechTarget = null
+        }
+    )
+
+    fun startSpeechRecognition(target: RecordTarget) {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak now...")
+        }
+        try {
+            currentSpeechTarget = target
+            speechRecognizerLauncher.launch(intent)
+        } catch (_: Exception) {
+            onEvent(Event.OnSpeechRecognitionError("Could not start speech recognition"))
+            currentSpeechTarget = null
+        }
+    }
+
     val blankTitleError = stringResource(R.string.note_editor_error_blank_title)
     val unknownError = stringResource(R.string.note_editor_error_unknown)
 
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
-            val errorText = when (uiState.error){
+            val errorText = when (uiState.error) {
                 is NoteError.BlankTitle -> blankTitleError
-                else -> unknownError
+                else -> uiState.error.message ?: unknownError
             }
             snackbarHostState.showSnackbar(
                 message = errorText
@@ -160,7 +195,7 @@ fun NoteEditorScreen(
                             colors = IconButtonDefaults.iconButtonColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
                                 contentColor = MaterialTheme.colorScheme.error
-                            )
+                            ),
                         ) {
                             Icon(
                                 imageVector = AppIcons.Delete,
@@ -215,15 +250,32 @@ fun NoteEditorScreen(
                 onValueChange = { onEvent(Event.OnTitleChanged(it)) },
                 label = { Text(stringResource(R.string.note_editor_title_label)) },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                trailingIcon = {
+                    IconButton(onClick = { startSpeechRecognition(RecordTarget.TITLE) }) {
+                        Icon(
+                            imageVector = AppIcons.Mic,
+                            contentDescription = "Speech recognition"
+                        )
+                    }
+                }
             )
+
             OutlinedTextField(
                 value = uiState.text,
                 onValueChange = { onEvent(Event.OnTextChanged(it)) },
                 label = { Text(stringResource(R.string.note_editor_text_label)) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp)
+                    .padding(top = 8.dp),
+                trailingIcon = {
+                    IconButton(onClick = { startSpeechRecognition(RecordTarget.TEXT) }) {
+                        Icon(
+                            imageVector = AppIcons.Mic,
+                            contentDescription = "Speech recognition"
+                        )
+                    }
+                }
             )
         }
     }

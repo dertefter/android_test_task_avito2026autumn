@@ -23,6 +23,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,6 +36,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import com.dertefter.design.components.search.TheSearchBar
 import com.dertefter.design.icons.Icons
 import com.dertefter.design.theme.TheTheme
@@ -56,8 +58,13 @@ fun NotesScreen(
         }
     }
 
+    val topBarState = rememberTopAppBarState()
+
     var showSortMenu by remember { mutableStateOf(false) }
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(state = topBarState)
+
+
+    val searchBarElevation = topBarState.overlappedFraction * 12.dp
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -122,6 +129,7 @@ fun NotesScreen(
                     query = uiState.searchQuery,
                     onQueryChange = { onEvent(Event.UpdateSearchQuery(it)) },
                     onSearch = { onEvent(Event.SubmitSearch) },
+                    elevation = searchBarElevation,
                     modifier = Modifier
                         .padding(horizontal = 12.dp)
                         .fillMaxWidth()

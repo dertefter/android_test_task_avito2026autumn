@@ -7,6 +7,16 @@ import com.dertefter.design.R
 
 object Icons {
 
+    val TextFields: ImageVector
+        @Composable get() = ImageVector.vectorResource(id = R.drawable.ic_text_fields)
+
+
+    val Mic: ImageVector
+        @Composable get() = ImageVector.vectorResource(id = R.drawable.ic_mic)
+
+    val Check: ImageVector
+        @Composable get() = ImageVector.vectorResource(id = R.drawable.ic_check)
+
     val Refresh: ImageVector
         @Composable get() = ImageVector.vectorResource(id = R.drawable.ic_refresh)
 

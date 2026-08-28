@@ -2,8 +2,6 @@ package com.dertefter.avito2026autumn.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.dertefter.data.settings.dto.theme.DarkThemeStatus
-import com.dertefter.data.settings.dto.theme.ThemeSeedColor
 import com.dertefter.data.settings.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,7 +15,7 @@ class MainViewModel @Inject constructor(
     repository: SettingsRepository
 ) : ViewModel() {
 
-    val themeState: StateFlow<ThemeState> = combine(
+    val themeState: StateFlow<ThemeState?> = combine(
         repository.currentThemeSeedColor,
         repository.darkThemeStatus
     ) { seedColor, darkThemeStatus ->
@@ -25,6 +23,6 @@ class MainViewModel @Inject constructor(
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = ThemeState(ThemeSeedColor.PURPLE, DarkThemeStatus.AUTO)
+        initialValue = null
     )
 }

@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Avito2026autumn" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Avito2026autumn" parent="android:Theme.Material.NoActionBar" />
+
+    <style name="Theme.Avito2026autumn.Splash" parent="Theme.SplashScreen">
+        <item name="postSplashScreenTheme">@style/Theme.Avito2026autumn</item>
+        <item name="windowSplashScreenBackground">@color/splash_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/app_icon_animated</item>
+        <item name="windowSplashScreenAnimationDuration">200</item>
+    </style>
+
+
 </resources>

@@ -3,6 +3,8 @@ package com.dertefter.data.ai.repository
 import com.dertefter.data.ai.api.AiApi
 import com.dertefter.data.ai.api.AuthApi
 import com.dertefter.data.ai.datastore.AiLocalDataSource
+import com.dertefter.data.ai.dto.ChatRequest
+import com.dertefter.data.ai.dto.Message
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import java.util.UUID
@@ -24,6 +26,24 @@ class AiRepositoryImpl @Inject constructor(
         val gigaChatBalance = response.balance.find { it.usage == "GigaChat" }?.value ?: 0
         localDataSource.saveBalance(gigaChatBalance)
         gigaChatBalance
+    }
+
+    override suspend fun generateTask(input: String): Result<String> = runCatching {
+        val requestText = """
+            Ты должен составить короткий текст задачи на основе того, что сказал пользователь.
+             Пользователь сказал: $input
+        """.trimIndent()
+
+        val token = getValidToken()
+        val request = ChatRequest(
+            model = "GigaChat",
+            messages = listOf(
+                Message(role = "system", content = "Ты — полезный ассистент."),
+                Message(role = "user", content = requestText)
+            )
+        )
+        val response = aiApi.chatCompletions("Bearer $token", request)
+        response.choices.firstOrNull()?.message?.content ?: throw Exception("Empty response from AI")
     }
 
     private suspend fun getValidToken(): String {

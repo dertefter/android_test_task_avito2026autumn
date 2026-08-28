@@ -2,11 +2,13 @@ package com.dertefter.tasks.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dertefter.data.ai.repository.AiRepository
 import com.dertefter.tasks.dto.SortOrder
 import com.dertefter.tasks.dto.TaskDto
 import com.dertefter.tasks.repository.TasksRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -19,7 +21,8 @@ import javax.inject.Inject
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class TasksViewModel @Inject constructor(
-    private val repository: TasksRepository
+    private val repository: TasksRepository,
+    private val aiRepository: AiRepository
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -28,6 +31,10 @@ class TasksViewModel @Inject constructor(
     private val _sortOrder = MutableStateFlow(SortOrder.NEWEST_FIRST)
     private val _isCreatingTask = MutableStateFlow(false)
     private val _newTaskTitle = MutableStateFlow("")
+    private val _generationStatus = MutableStateFlow<GenerationStatus?>(null)
+
+    private var generationJob: Job? = null
+    private var lastRecognizedText: String? = null
 
     private val _tasks = combine(_submittedQuery, _sortOrder) { query, sortOrder ->
         query to sortOrder
@@ -41,7 +48,8 @@ class TasksViewModel @Inject constructor(
         _isSearchVisible,
         _sortOrder,
         _isCreatingTask,
-        _newTaskTitle
+        _newTaskTitle,
+        _generationStatus
     ) { args ->
         UiState(
             tasks = args[0] as List<TaskDto>,
@@ -49,7 +57,8 @@ class TasksViewModel @Inject constructor(
             isSearchVisible = args[2] as Boolean,
             sortOrder = args[3] as SortOrder,
             isCreatingTask = args[4] as Boolean,
-            newTaskTitle = args[5] as String
+            newTaskTitle = args[5] as String,
+            generationStatus = args[6] as GenerationStatus?
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UiState())
 
@@ -108,6 +117,34 @@ class TasksViewModel @Inject constructor(
                     repository.toggleTaskCompletion(event.taskId)
                 }
             }
+
+            is Event.StartAiGeneration -> {
+                startGeneration(event.recognizedText)
+            }
+            Event.RetryAiGeneration -> {
+                lastRecognizedText?.let { startGeneration(it) }
+            }
+            Event.CancelAiGeneration -> {
+                generationJob?.cancel()
+                _generationStatus.value = null
+            }
+        }
+    }
+
+    private fun startGeneration(recognizedText: String) {
+        lastRecognizedText = recognizedText
+        generationJob?.cancel()
+        generationJob = viewModelScope.launch {
+            _generationStatus.value = GenerationStatus.LOADING
+            aiRepository.generateTask(recognizedText)
+                .onSuccess { generatedTitle ->
+                    _generationStatus.value = null
+                    _isCreatingTask.value = true
+                    _newTaskTitle.value = generatedTitle
+                }
+                .onFailure {
+                    _generationStatus.value = GenerationStatus.FAILED
+                }
         }
     }
 }

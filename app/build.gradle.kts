@@ -49,17 +49,13 @@ dependencies {
     implementation(project(":feat:note_editor"))
     implementation(project(":feat:settings"))
 
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
-
     implementation(libs.androidx.lifecycle.runtime.ktx)
-
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
-
-    implementation(libs.play.services.base)
-
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

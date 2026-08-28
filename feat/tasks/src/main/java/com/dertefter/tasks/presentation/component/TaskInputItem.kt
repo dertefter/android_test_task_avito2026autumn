@@ -1,5 +1,6 @@
 package com.dertefter.tasks.presentation.component
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -82,11 +83,16 @@ fun TaskInputItem(
             )
         }
 
-        IconButton(onClick = onSave) {
-            Icon(
-                imageVector = Icons.Save,
-                contentDescription = "Сохранить"
-            )
+        AnimatedVisibility(
+            visible = title.isNotBlank()
+        ) {
+            IconButton(onClick = onSave) {
+                Icon(
+                    imageVector = Icons.Save,
+                    contentDescription = "Сохранить"
+                )
+            }
         }
+
     }
 }
