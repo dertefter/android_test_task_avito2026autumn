@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.dertefter.data.settings.dto.note_editor.NoteEditorStrategy
 import com.dertefter.data.settings.dto.theme.DarkThemeStatus
 import com.dertefter.data.settings.dto.theme.ThemeSeedColor
 import kotlinx.coroutines.flow.Flow
@@ -17,6 +18,7 @@ class SettingsRepositoryImpl @Inject constructor(
     private object PreferencesKeys {
         val THEME_SEED_COLOR = stringPreferencesKey("theme_seed_color")
         val DARK_THEME_STATUS = stringPreferencesKey("dark_theme_status")
+        val NOTE_EDITOR_STRATEGY = stringPreferencesKey("note_editor_strategy")
     }
 
     override val currentThemeSeedColor: Flow<ThemeSeedColor> = dataStore.data
@@ -59,4 +61,20 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override val availableThemeColors: List<ThemeSeedColor> = ThemeSeedColor.entries
+
+    override val noteEditorStrategy: Flow<NoteEditorStrategy> = dataStore.data
+        .map { preferences ->
+            val strategyName = preferences[PreferencesKeys.NOTE_EDITOR_STRATEGY] ?: NoteEditorStrategy.WITHOUT_PERMISSIONS.name
+            try {
+                NoteEditorStrategy.valueOf(strategyName)
+            } catch (_: Exception) {
+                NoteEditorStrategy.WITHOUT_PERMISSIONS
+            }
+        }
+
+    override suspend fun setNoteEditorStrategy(strategy: NoteEditorStrategy) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.NOTE_EDITOR_STRATEGY] = strategy.name
+        }
+    }
 }

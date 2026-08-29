@@ -30,6 +30,7 @@ dependencies {
     implementation(project(":core:design"))
     implementation(project(":core:navigation"))
     implementation(project(":core:data:notes"))
+    implementation(project(":core:data:settings"))
 
     implementation(libs.androidx.navigation.compose)
     implementation(libs.hilt.lifecycle.viewmodel.compose)

@@ -15,4 +15,6 @@
     <string name="note_editor_permission_rationale">Для этого нужно разрешение на доступ к микрофону</string>
     <string name="note_editor_ok">Ок</string>
     <string name="note_editor_cancel">Отмена</string>
+    <string name="note_editor_permissions_required">Для этого требуются разрешения</string>
+    <string name="note_editor_grant_permissions">Выдать разрешения</string>
 </resources>

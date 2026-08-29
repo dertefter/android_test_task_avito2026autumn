@@ -1,9 +1,12 @@
 package com.dertefter.note_editor.presentation
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import android.speech.RecognizerIntent
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -20,6 +23,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FloatingActionButton
@@ -27,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -36,6 +42,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,14 +51,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
+import com.dertefter.data.settings.dto.note_editor.NoteEditorStrategy
 import com.dertefter.design.theme.TheTheme
 import com.dertefter.note_editor.R
 import com.dertefter.notes.errors.NoteError
@@ -133,6 +143,62 @@ fun NoteEditorScreen(
         }
     }
 
+    val permissionsToRequest = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            arrayOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+            )
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+        } else {
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+    }
+
+    var permissionsGranted by remember {
+        mutableStateOf(checkGalleryPermissions(context))
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { _ ->
+        permissionsGranted = checkGalleryPermissions(context)
+        if (!permissionsGranted) {
+            val activity = context as? Activity
+            val stillShouldShowRationale = permissionsToRequest.any {
+                activity?.let { act -> ActivityCompat.shouldShowRequestPermissionRationale(act, it) } ?: false
+            }
+            if (!stillShouldShowRationale) {
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", context.packageName, null)
+                }
+                context.startActivity(intent)
+            }
+        }
+    }
+
+    var showGallerySheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
+
+    if (showGallerySheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showGallerySheet = false },
+            sheetState = sheetState
+        ) {
+            GalleryBottomSheetContent(
+                permissionsGranted = permissionsGranted,
+                onImageSelected = { uri ->
+                    onEvent(Event.OnImageChanged(uri.toString()))
+                    showGallerySheet = false
+                },
+                onGrantPermissions = {
+                    permissionLauncher.launch(permissionsToRequest)
+                },
+            )
+        }
+    }
+
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
@@ -180,6 +246,53 @@ fun NoteEditorScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier
+                    .fillMaxWidth()
+            ){
+                Column(
+                    modifier = Modifier.padding(12.dp)
+                ) {
+                    Text("Стратегия работы экрана")
+
+                    Row() {
+                        Button(
+                            modifier = Modifier.weight(1f),
+                            onClick = { onEvent(Event.OnSelectScreenStrategy(NoteEditorStrategy.WITH_PERMISSIONS)) },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (uiState.strategy == NoteEditorStrategy.WITH_PERMISSIONS) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    Color.Transparent
+                                },
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        ){
+                            Text("С разрешениями")
+                        }
+                        Button(
+                            modifier = Modifier.weight(1f),
+                            onClick = { onEvent(Event.OnSelectScreenStrategy(NoteEditorStrategy.WITHOUT_PERMISSIONS)) },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (uiState.strategy == NoteEditorStrategy.WITHOUT_PERMISSIONS) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    Color.Transparent
+                                },
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        ){
+                            Text("Без разрешений")
+                        }
+                    }
+
+                }
+            }
+
 
             Surface(
                 color = MaterialTheme.colorScheme.surfaceVariant,
@@ -234,7 +347,12 @@ fun NoteEditorScreen(
                     ){
                         TextButton(
                             onClick = {
-                                pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                if (uiState.strategy == NoteEditorStrategy.WITH_PERMISSIONS) {
+                                    showGallerySheet = true
+                                    permissionsGranted = checkGalleryPermissions(context)
+                                } else {
+                                    pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                }
                             }
                         ) {
                             Text(stringResource(R.string.note_editor_add_from_gallery))

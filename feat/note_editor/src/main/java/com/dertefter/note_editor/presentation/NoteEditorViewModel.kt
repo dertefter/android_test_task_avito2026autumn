@@ -4,13 +4,17 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.dertefter.data.settings.dto.note_editor.NoteEditorStrategy
+import com.dertefter.data.settings.repository.SettingsRepository
 import com.dertefter.navigation.Navigator
 import com.dertefter.navigation.Routes
 import com.dertefter.notes.repository.NotesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -19,15 +23,61 @@ import javax.inject.Inject
 class NoteEditorViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val navigator: Navigator,
-    private val notesRepository: NotesRepository
+    private val notesRepository: NotesRepository,
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(UiState())
-    val uiState = _uiState.asStateFlow()
+    private val _noteId = MutableStateFlow<Long?>(null)
+    private val _title = MutableStateFlow("")
+    private val _text = MutableStateFlow("")
+    private val _imagePath = MutableStateFlow<String?>(null)
+    private val _isLoading = MutableStateFlow(false)
+    private val _error = MutableStateFlow<Throwable?>(null)
 
-    private var originalTitle: String = ""
-    private var originalText: String = ""
-    private var originalImagePath: String? = null
+    private val _originalTitle = MutableStateFlow("")
+    private val _originalText = MutableStateFlow("")
+    private val _originalImagePath = MutableStateFlow<String?>(null)
+
+    val uiState = combine(
+        _noteId,
+        _title,
+        _text,
+        _imagePath,
+        _isLoading,
+        _error,
+        settingsRepository.noteEditorStrategy,
+        _originalTitle,
+        _originalText,
+        _originalImagePath
+    ) { params ->
+        val noteId = params[0] as Long?
+        val title = params[1] as String
+        val text = params[2] as String
+        val imagePath = params[3] as String?
+        val isLoading = params[4] as Boolean
+        val error = params[5] as Throwable?
+        val strategy = params[6] as NoteEditorStrategy
+        val originalTitle = params[7] as String
+        val originalText = params[8] as String
+        val originalImagePath = params[9] as String?
+
+        val hasChanged = title != originalTitle ||
+                text != originalText ||
+                imagePath != originalImagePath
+
+        val titleReady = title.isNotBlank()
+
+        UiState(
+            id = noteId,
+            title = title,
+            text = text,
+            imagePath = imagePath,
+            isLoading = isLoading,
+            isSaveEnabled = hasChanged && titleReady,
+            error = error,
+            strategy = strategy
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UiState())
 
     init {
         val noteId = try {
@@ -43,67 +93,45 @@ class NoteEditorViewModel @Inject constructor(
 
     private fun loadNote(noteId: Long) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _isLoading.value = true
             val note = notesRepository.getNoteById(noteId).first()
             if (note != null) {
-                originalTitle = note.title
-                originalText = note.text
-                originalImagePath = note.imagePath
-                _uiState.update {
-                    it.copy(
-                        id = note.id,
-                        title = note.title,
-                        text = note.text,
-                        imagePath = note.imagePath,
-                        isLoading = false,
-                        isSaveEnabled = false
-                    )
-                }
-            } else {
-                _uiState.update { it.copy(isLoading = false) }
+                _originalTitle.value = note.title
+                _originalText.value = note.text
+                _originalImagePath.value = note.imagePath
+                
+                _noteId.value = note.id
+                _title.value = note.title
+                _text.value = note.text
+                _imagePath.value = note.imagePath
             }
-        }
-    }
-
-    private fun updateSaveEnabled() {
-        _uiState.update { state ->
-            val hasChanged = state.title != originalTitle ||
-                    state.text != originalText ||
-                    state.imagePath != originalImagePath
-
-            val titleReady = state.title.isNotBlank()
-
-            state.copy(isSaveEnabled = (hasChanged && titleReady) )
+            _isLoading.value = false
         }
     }
 
     fun onEvent(event: Event) {
          when (event) {
+
+             is Event.OnSelectScreenStrategy -> {
+                 viewModelScope.launch {
+                     settingsRepository.setNoteEditorStrategy(event.strategy)
+                 }
+             }
+
             Event.OnBack -> {
                 navigator.navigateUp()
             }
 
             is Event.OnTitleChanged -> {
-                _uiState.update {
-                    it.copy(
-                        title = event.title
-                    )
-                }
-                updateSaveEnabled()
+                _title.value = event.title
             }
 
             is Event.OnTextChanged -> {
-                _uiState.update {
-                    it.copy(text = event.text)
-                }
-                updateSaveEnabled()
+                _text.value = event.text
             }
 
             is Event.OnImageChanged -> {
-                _uiState.update {
-                    it.copy(imagePath = event.imagePath)
-                }
-                updateSaveEnabled()
+                _imagePath.value = event.imagePath
             }
 
             Event.OnSaveNote -> {
@@ -111,37 +139,34 @@ class NoteEditorViewModel @Inject constructor(
             }
 
             Event.OnDismissError -> {
-                _uiState.update { it.copy(error = null) }
+                _error.value = null
             }
 
             is Event.OnSpeechRecognized -> {
                 if (event.target == RecordTarget.TITLE) {
-                    _uiState.update { it.copy(title = (it.title + " " + event.text).trim()) }
+                    _title.update { (it + " " + event.text).trim() }
                 } else {
-                    _uiState.update { it.copy(text = (it.text + " " + event.text).trim()) }
+                    _text.update { (it + " " + event.text).trim() }
                 }
-                updateSaveEnabled()
             }
 
             is Event.OnSpeechRecognitionError -> {
-                _uiState.update { it.copy(error = Exception(event.message)) }
+                _error.value = Exception(event.message)
             }
         }
     }
 
     private fun saveNote() {
-        val state = _uiState.value
-
         viewModelScope.launch {
             notesRepository.saveNote(
-                title = state.title,
-                text = state.text,
-                imagePath = state.imagePath,
-                noteId = state.id
+                title = _title.value,
+                text = _text.value,
+                imagePath = _imagePath.value,
+                noteId = _noteId.value
             ).onSuccess {
                 navigator.navigateUp()
             }.onFailure { throwable ->
-                _uiState.update { it.copy(error = throwable) }
+                _error.value = throwable
             }
         }
     }
