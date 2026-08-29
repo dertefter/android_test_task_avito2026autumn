@@ -90,6 +90,15 @@ fun TaskItem(
             )
 
             Text(
+                text = if (task.isCompleted) "Выполнена" else "Не выполнена",
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.secondary
+            )
+
+
+            Text(
                 text = formattedDate,
                 style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,

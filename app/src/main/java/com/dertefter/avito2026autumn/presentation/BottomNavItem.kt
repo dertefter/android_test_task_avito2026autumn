@@ -13,21 +13,21 @@ sealed class BottomNavItem(
 ) {
     data object Notes : BottomNavItem(
         graphRoute = Routes.NotesGraph,
-        label = "Notes",
+        label = "Заметки",
         unselectedIcon = { Icons.ListAlt },
         selectedIcon = { Icons.ListAltFilled }
     )
 
     data object Tasks : BottomNavItem(
         graphRoute = Routes.TasksGraph,
-        label = "Tasks",
+        label = "Задачи",
         unselectedIcon = { Icons.ListAlt },
         selectedIcon = { Icons.ListAltFilled }
     )
 
     data object Settings : BottomNavItem(
         graphRoute = Routes.SettingsGraph,
-        label = "Settings",
+        label = "Настройки",
         unselectedIcon = { Icons.Settings },
         selectedIcon = { Icons.SettingsFilled }
     )

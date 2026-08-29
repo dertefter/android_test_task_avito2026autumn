@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -21,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -44,6 +46,9 @@ import com.dertefter.notes.dto.NoteDto
 import com.dertefter.notes.dto.SortOrder
 import com.dertefter.notes.presentation.component.NoteItem
 import java.time.LocalDateTime
+import android.content.Context
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -51,6 +56,7 @@ fun NotesScreen(
     onEvent: (Event) -> Unit,
     uiState: UiState
 ) {
+    val context = LocalContext.current
 
     LaunchedEffect(uiState.notes) {
         if (uiState.notes.isEmpty()){
@@ -61,6 +67,7 @@ fun NotesScreen(
     val topBarState = rememberTopAppBarState()
 
     var showSortMenu by remember { mutableStateOf(false) }
+    var noteIdToDelete by remember { mutableStateOf<Long?>(null) }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(state = topBarState)
 
 
@@ -171,12 +178,15 @@ fun NotesScreen(
                     note = note,
                     isDeleteMode = uiState.isDeleteMode,
                     onDeleteClick = {
-                        onEvent(Event.DeleteNote(note.id))
+                        noteIdToDelete = note.id
                     },
                     onClick = {
                         onEvent(
                             Event.OpenNoteDetail(note.id)
                         )
+                    },
+                    onShareClick = {
+                        shareNote(context, note.title, note.text)
                     }
                 )
             }
@@ -192,6 +202,28 @@ fun NotesScreen(
                 )
             }
 
+        }
+
+        if (noteIdToDelete != null) {
+            AlertDialog(
+                onDismissRequest = { noteIdToDelete = null },
+                title = { Text("Точно удалить?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            noteIdToDelete?.let { onEvent(Event.DeleteNote(it)) }
+                            noteIdToDelete = null
+                        }
+                    ) {
+                        Text("Да")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { noteIdToDelete = null }) {
+                        Text("Нет")
+                    }
+                }
+            )
         }
 
     }
@@ -222,4 +254,14 @@ fun NotesScreenPreview() {
             )
 
     }
+}
+
+private fun shareNote(context: Context, title: String, text: String) {
+    val sendIntent: Intent = Intent().apply {
+        action = Intent.ACTION_SEND
+        putExtra(Intent.EXTRA_TEXT, "$title\n\n$text")
+        type = "text/plain"
+    }
+    val shareIntent = Intent.createChooser(sendIntent, null)
+    context.startActivity(shareIntent)
 }

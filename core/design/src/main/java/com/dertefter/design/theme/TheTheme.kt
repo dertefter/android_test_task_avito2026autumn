@@ -8,6 +8,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.materialkolor.PaletteStyle
 import com.materialkolor.rememberDynamicColorScheme
 
 @Composable
@@ -27,7 +28,11 @@ fun TheTheme(
         }
     }
 
-    val colorScheme = rememberDynamicColorScheme(seedColor = seedColor, isDark = darkTheme)
+    val colorScheme = rememberDynamicColorScheme(
+        seedColor = seedColor,
+        isDark = darkTheme,
+        style = PaletteStyle.Vibrant
+    )
 
     MaterialTheme(
         colorScheme = colorScheme,

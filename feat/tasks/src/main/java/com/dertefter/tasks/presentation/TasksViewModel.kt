@@ -1,5 +1,6 @@
 package com.dertefter.tasks.presentation
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dertefter.data.ai.repository.AiRepository
@@ -148,6 +149,7 @@ class TasksViewModel @Inject constructor(
                     _newTaskTitle.value = generatedTitle
                 }
                 .onFailure {
+                    Log.e("zzzzzzzzzzzz", it.stackTraceToString())
                     _generationStatus.value = GenerationStatus.FAILED
                 }
         }

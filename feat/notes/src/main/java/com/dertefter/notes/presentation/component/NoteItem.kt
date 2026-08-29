@@ -37,6 +37,7 @@ fun NoteItem(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
     onDeleteClick: () -> Unit = {},
+    onShareClick: () -> Unit = {},
     isDeleteMode: Boolean = false,
     note: NoteDto
 ) {
@@ -95,6 +96,23 @@ fun NoteItem(
                     }
                 }
             )
+
+            IconButton(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(4.dp),
+                onClick = onShareClick,
+                enabled = !isDeleteMode,
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Share,
+                    contentDescription = "Поделиться"
+                )
+            }
 
         }
 

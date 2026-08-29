@@ -150,6 +150,14 @@ fun NoteEditorScreen(
                             contentDescription = stringResource(R.string.note_editor_back_button_description)
                         )
                     }
+                },
+                actions = {
+                    IconButton(onClick = { shareNote(context, uiState.title, uiState.text) }) {
+                        Icon(
+                            imageVector = AppIcons.Share,
+                            contentDescription = stringResource(R.string.note_editor_share_button_description)
+                        )
+                    }
                 }
             )
         },
@@ -288,6 +296,16 @@ private fun getTmpFileUri(context: Context): Uri {
     }
 
     return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", tmpFile)
+}
+
+private fun shareNote(context: Context, title: String, text: String) {
+    val sendIntent: Intent = Intent().apply {
+        action = Intent.ACTION_SEND
+        putExtra(Intent.EXTRA_TEXT, "$title\n\n$text")
+        type = "text/plain"
+    }
+    val shareIntent = Intent.createChooser(sendIntent, null)
+    context.startActivity(shareIntent)
 }
 
 @Preview

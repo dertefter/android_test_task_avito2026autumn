@@ -13,6 +13,8 @@ object Icons {
     val TextFields: ImageVector
         @Composable get() = ImageVector.vectorResource(id = R.drawable.ic_text_fields)
 
+    val Share: ImageVector
+        @Composable get() = ImageVector.vectorResource(id = R.drawable.ic_share)
 
     val Mic: ImageVector
         @Composable get() = ImageVector.vectorResource(id = R.drawable.ic_mic)

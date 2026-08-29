@@ -31,15 +31,15 @@ class AiRepositoryImpl @Inject constructor(
     override suspend fun generateTask(input: String): Result<String> = runCatching {
         val requestText = """
             Ты должен составить короткий текст задачи на основе того, что сказал пользователь.
-             Пользователь сказал: $input
+            Например, пользователь говорит: "создай задачу покормить кота", а ты пишешь - "Покормить кота"
         """.trimIndent()
 
         val token = getValidToken()
         val request = ChatRequest(
-            model = "GigaChat",
+            model = "GigaChat-2-Max",
             messages = listOf(
-                Message(role = "system", content = "Ты — полезный ассистент."),
-                Message(role = "user", content = requestText)
+                Message(role = "system", content = requestText),
+                Message(role = "user", content = input)
             )
         )
         val response = aiApi.chatCompletions("Bearer $token", request)

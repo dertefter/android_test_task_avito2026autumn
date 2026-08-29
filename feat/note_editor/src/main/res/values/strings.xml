@@ -5,6 +5,7 @@
     <string name="note_editor_title_edit">Редактировать</string>
     <string name="note_editor_back_button_description">Назад</string>
     <string name="note_editor_save_button_description">Сохранить</string>
+    <string name="note_editor_share_button_description">Поделиться</string>
     <string name="note_editor_delete_image_description">Удалить изображение</string>
     <string name="note_editor_image_missing">Изображение отсутствует</string>
     <string name="note_editor_add_from_gallery">Добавить из галереи</string>
