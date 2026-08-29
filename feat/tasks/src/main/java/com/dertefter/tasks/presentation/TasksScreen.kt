@@ -46,6 +46,7 @@ import com.dertefter.design.icons.Icons
 import com.dertefter.design.theme.TheTheme
 import com.dertefter.tasks.dto.SortOrder
 import com.dertefter.tasks.dto.TaskDto
+import com.dertefter.tasks.dto.TaskFilter
 import com.dertefter.tasks.presentation.component.TaskGenerationStatusCard
 import com.dertefter.tasks.presentation.component.TaskInputItem
 import com.dertefter.tasks.presentation.component.TaskItem
@@ -59,6 +60,7 @@ fun TasksScreen(
 ) {
 
     var showSortMenu by remember { mutableStateOf(false) }
+    var showFilterMenu by remember { mutableStateOf(false) }
     var isFabExpanded by remember { mutableStateOf(false) }
 
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
@@ -101,7 +103,41 @@ fun TasksScreen(
                     },
                     actions = {
 
-                        if (uiState.tasks.isNotEmpty()){
+                        if (uiState.tasks.isNotEmpty() || uiState.filter != TaskFilter.ALL){
+                            Box {
+                                IconButton(onClick = { showFilterMenu = true }) {
+                                    Icon(
+                                        imageVector = Icons.FilterAlt,
+                                        contentDescription = "Фильтрация"
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = showFilterMenu,
+                                    onDismissRequest = { showFilterMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Все") },
+                                        onClick = {
+                                            onEvent(Event.ChangeFilter(TaskFilter.ALL))
+                                            showFilterMenu = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Выполнено") },
+                                        onClick = {
+                                            onEvent(Event.ChangeFilter(TaskFilter.COMPLETED))
+                                            showFilterMenu = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Не выполнено") },
+                                        onClick = {
+                                            onEvent(Event.ChangeFilter(TaskFilter.NOT_COMPLETED))
+                                            showFilterMenu = false
+                                        }
+                                    )
+                                }
+                            }
                             Box {
                                 IconButton(onClick = { showSortMenu = true }) {
                                     Icon(
@@ -301,7 +337,8 @@ fun TasksScreenPreview() {
             {},
             uiState = UiState(
                 tasks = tasks,
-                sortOrder = SortOrder.NEWEST_FIRST
+                sortOrder = SortOrder.NEWEST_FIRST,
+                generationStatus = GenerationStatus.LOADING
             )
             )
 

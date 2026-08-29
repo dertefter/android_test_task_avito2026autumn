@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.dertefter.data.ai.repository.AiRepository
 import com.dertefter.tasks.dto.SortOrder
 import com.dertefter.tasks.dto.TaskDto
+import com.dertefter.tasks.dto.TaskFilter
 import com.dertefter.tasks.repository.TasksRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -13,8 +14,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -27,8 +28,8 @@ class TasksViewModel @Inject constructor(
 
     private val _searchQuery = MutableStateFlow("")
     private val _submittedQuery = MutableStateFlow("")
-    private val _isSearchVisible = MutableStateFlow(false)
     private val _sortOrder = MutableStateFlow(SortOrder.NEWEST_FIRST)
+    private val _filter = MutableStateFlow(TaskFilter.ALL)
     private val _isCreatingTask = MutableStateFlow(false)
     private val _newTaskTitle = MutableStateFlow("")
     private val _generationStatus = MutableStateFlow<GenerationStatus?>(null)
@@ -36,29 +37,37 @@ class TasksViewModel @Inject constructor(
     private var generationJob: Job? = null
     private var lastRecognizedText: String? = null
 
-    private val _tasks = combine(_submittedQuery, _sortOrder) { query, sortOrder ->
-        query to sortOrder
-    }.flatMapLatest { (query, sortOrder) ->
-        repository.getTasks(query, sortOrder)
+    private val _tasks = combine(_submittedQuery, _sortOrder, _filter) { query, sortOrder, filter ->
+        Triple(query, sortOrder, filter)
+    }.flatMapLatest { (query, sortOrder, filter) ->
+        repository.getTasks(query, sortOrder).map { tasks ->
+            when (filter) {
+                TaskFilter.ALL -> tasks
+                TaskFilter.COMPLETED -> tasks.filter { it.isCompleted }
+                TaskFilter.NOT_COMPLETED -> tasks.filter { !it.isCompleted }
+            }
+        }
     }
 
     val uiState = combine(
         _tasks,
         _searchQuery,
-        _isSearchVisible,
         _sortOrder,
+        _filter,
         _isCreatingTask,
         _newTaskTitle,
         _generationStatus
     ) { args ->
+        val isCreatingTaskInternal = args[4] as Boolean
+        val generationStatus = args[6] as GenerationStatus?
         UiState(
             tasks = args[0] as List<TaskDto>,
             searchQuery = args[1] as String,
-            isSearchVisible = args[2] as Boolean,
-            sortOrder = args[3] as SortOrder,
-            isCreatingTask = args[4] as Boolean,
+            sortOrder = args[2] as SortOrder,
+            filter = args[3] as TaskFilter,
+            isCreatingTask = isCreatingTaskInternal || generationStatus != null,
             newTaskTitle = args[5] as String,
-            generationStatus = args[6] as GenerationStatus?
+            generationStatus = generationStatus
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UiState())
 
@@ -102,15 +111,11 @@ class TasksViewModel @Inject constructor(
             Event.SubmitSearch -> {
                 _submittedQuery.value = _searchQuery.value
             }
-            Event.ToggleSearch -> {
-                _isSearchVisible.update { !it }
-                if (!_isSearchVisible.value) {
-                    _searchQuery.value = ""
-                    _submittedQuery.value = ""
-                }
-            }
             is Event.ChangeSortOrder -> {
                 _sortOrder.value = event.sortOrder
+            }
+            is Event.ChangeFilter -> {
+                _filter.value = event.filter
             }
             is Event.ToggleTask -> {
                 viewModelScope.launch {

@@ -7,6 +7,9 @@ import com.dertefter.design.R
 
 object Icons {
 
+    val FilterAlt: ImageVector
+        @Composable get() = ImageVector.vectorResource(id = R.drawable.ic_filter_alt)
+
     val TextFields: ImageVector
         @Composable get() = ImageVector.vectorResource(id = R.drawable.ic_text_fields)
 
