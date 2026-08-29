@@ -74,7 +74,8 @@
 
 Подключить [SaluteSpeech API](https://developers.sber.ru/docs/ru/salutespeech/quick-start/integration-individuals) мне не удалось.
 > С 15 июля 2026 года подключение для новых клиентов недоступно.
-> <img src="art/с1.png" width="22%" />
+
+> <img src="art/с1.png" />
 
 К сожалению, это я заметил не сразу: было потрачено много времени на изучение документации SaluteSpeech, прежде чем я понял, что использовать SaluteSpeech не получится. 
 
